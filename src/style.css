@@ -5,7 +5,11 @@
 }
 
 body {
-  min-height: 3000px; /* or any large value */
+  min-height: 2000px;
+}
+
+body::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Edge */
 }
 
 canvas {
