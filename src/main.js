@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 let yaw = 0;
-let pitch = 0;
 let isPointerLocked = false;
 
 const canvas = document.getElementById('canvas');
@@ -29,10 +28,7 @@ document.addEventListener('pointerlockchange', () => {
 
 document.addEventListener('mousemove', (event) => {
   if (!isPointerLocked) return;
-
   yaw -= event.movementX * 0.002;
-  pitch -= event.movementY * 0.002;
-  pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
 });
 
 // Cube
@@ -43,28 +39,36 @@ cube.position.y = 0.5;
 cube.castShadow = true; // Enable shadow casting
 scene.add(cube);
 
-// Ground Texture
+// Wall Texture
 const textureLoader = new THREE.TextureLoader();
-const groundTexture = textureLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-groundTexture.repeat.set(25, 25); // Repeat texture across large plane
+const wallTexture = textureLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+wallTexture.repeat.set(1, 25); // Repeat texture across large plane
 
-// Ground Plane
-const groundGeometry = new THREE.PlaneGeometry(100, 100);
-const groundMaterial = new THREE.MeshStandardMaterial({ map: groundTexture });
-const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+// Wall Plane
+const walls = [];
+const wallGeometry = new THREE.PlaneGeometry(10, 100);
+const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture });
+const wall = new THREE.Mesh(wallGeometry, wallMaterial);
 
-ground.rotation.x = -Math.PI / 2; // Rotate to lie flat (XZ plane)
-ground.position.y = -0.5; // Lower it slightly below the cube
-ground.receiveShadow = true; // Enable shadow receiving
-scene.add(ground);
+for (let i = 0; i < 6; i++) {
+  const wallClone = wall.clone(); // Position each wall clone slightly below the previous one
+  wallClone.receiveShadow = true; // Enable shadow receiving
+  walls.push(wallClone);
+  wallClone.position.set(0, -60, -8.66); // Position each wall clone
+  rotateAroundPoint(wallClone, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), Math.PI / 3 * i);
+
+  scene.add(wallClone);
+}
+
+console.log('Walls:', walls.length); // Log the number of walls created
 
 // Add a light so we can see the material properly
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 1);
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(10, 20, 10);
+directionalLight.position.set(0, 50, 0); // Position the light above the scene
 directionalLight.intensity = 2;
 directionalLight.castShadow = true; // Enable shadow casting
 directionalLight.shadow.mapSize.width = 1024;
@@ -91,7 +95,7 @@ window.addEventListener('resize', () => {
 
 // Movement tracking
 const keysPressed = {};
-
+var scrollPosition = 0;
 // Listen for key events
 document.addEventListener('keydown', (event) => {
   keysPressed[event.key.toLowerCase()] = true;
@@ -100,41 +104,36 @@ document.addEventListener('keyup', (event) => {
   keysPressed[event.key.toLowerCase()] = false;
 });
 
-// Movement input handling
-var MoveInput = new THREE.Vector2(0, 0);
+window.addEventListener('scroll', (event) => {
+  scrollPosition = window.scrollY; // Store scroll position
 
-// Update MoveInput based on key presses
-function InputUpdate() {
-  MoveInput.set(0, 0); // Reset MoveInput each frame
-  if (keysPressed['w']) MoveInput.y = 1;
-  if (keysPressed['s']) MoveInput.y = -1;
+  // You can access scroll position with window.scrollY or document.documentElement.scrollTop
+  console.log('Scroll position:', window.scrollY);
+});
 
-  if (keysPressed['a']) MoveInput.x = 1;
-  if (keysPressed['d']) MoveInput.x = -1;
-
-  MoveInput.normalize(); // Normalize to ensure consistent speed
-  console.log(MoveInput);
+// Function to rotate an object around a point
+function rotateAroundPoint(obj, point, axis, theta) {
+  obj.position.sub(point); // translate to pivot point
+  obj.position.applyAxisAngle(axis, theta); // rotate around axis
+  obj.position.add(point); // translate back
+  obj.rotateOnAxis(axis, theta); // rotate object's orientation
 }
 
 // Animation loop
 function animate() {
   requestAnimationFrame(animate);
-  InputUpdate();
 
   cube.rotation.y = yaw; // Rotate cube based on yaw
 
   // Move cube based on input and yaw
-  let moveSpeed = 0.25;
-  if (keysPressed['shift']) moveSpeed = 0.5;
-  const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(MoveInput.y);
-  const right = new THREE.Vector3(Math.sin(yaw + Math.PI / 2), 0, Math.cos(yaw + Math.PI / 2)).multiplyScalar(MoveInput.x);
-  const move = forward.add(right).multiplyScalar(moveSpeed);
-  cube.position.add(move);
+  const constantOfMobility = 0.1; // Speed of movement
+  const cubeTargetPosition = new THREE.Vector3(0, -scrollPosition, 0).multiplyScalar(constantOfMobility);
+  cube.position.lerp(cubeTargetPosition, 0.1); // Smoothly interpolate cube position
 
   // Smooth follow camera
-  const cameraOffset = new THREE.Vector3(0, 2, -4).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-  const targetPosition = cube.position.clone().add(cameraOffset);
-  camera.position.lerp(targetPosition, 0.2); // Smoothly interpolate camera position
+  const cameraOffset = new THREE.Vector3(0, 0, -4).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+  const cameraTargetPosition = cube.position.clone().add(cameraOffset);
+  camera.position.lerp(cameraTargetPosition, 0.2); // Smoothly interpolate camera position
   camera.lookAt(cube.position);
 
   renderer.render(scene, camera);
