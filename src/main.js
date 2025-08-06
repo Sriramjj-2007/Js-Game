@@ -1,14 +1,17 @@
 import * as THREE from 'three';
-import { lerp } from 'three/src/math/MathUtils.js';
+import { inverseLerp, lerp } from 'three/src/math/MathUtils.js';
+const hasMouse = window.matchMedia("(pointer: fine)").matches;
+let isPointerLocked = false;
+
 let maxYaw = window.innerWidth - 15; // Maximum yaw based on window width
 let yaw = 0;
 let scrollPosition = 0;
+let touchStartX = 0;
+let touchYaw = yaw;
+
 const initialCubePositionY = 100;
-const platform = navigator.platform.toLowerCase();
-let isPointerLocked = false;
 
 const canvas = document.getElementById('canvas');
-
 // Scene, Camera, Renderer
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x202020);
@@ -39,9 +42,21 @@ document.addEventListener('mousemove', (event) => {
 });
 
 window.addEventListener('scroll', (event) => {
-  scrollPosition = window.scrollY; // Store scroll position
-  if (platform.includes('android') || platform.includes('iphone') || platform.includes('ipad')) {
-    yaw = window.scrollX; // Adjust yaw based on scroll
+  scrollPosition = window.scrollY * 0.01; // Store scroll position
+});
+
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    touchStartX = e.touches[0].clientX;
+    touchYaw = yaw;
+  }
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1) {
+    const touchX = e.touches[0].clientX;
+    const deltaX = touchX - touchStartX;
+    yaw = touchYaw - deltaX * 0.005; // Adjust sensitivity here
   }
 });
 
@@ -55,9 +70,9 @@ scene.add(cube);
 
 // Wall Texture
 const textureLoader = new THREE.TextureLoader();
-const wallTexture = textureLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+const wallTexture = textureLoader.load('https://thumbs.dreamstime.com/b/futuristic-metallic-brick-texture-glowing-blue-purple-neon-lines-cyberpunk-sci-fi-aesthetic-sleek-modern-seamless-hd-pattern-362054057.jpg');
 wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-wallTexture.repeat.set(1, 25); // Repeat texture across large plane
+wallTexture.repeat.set(1, 25/2); // Repeat texture across large plane
 
 // Wall Plane
 const walls = [];
@@ -69,7 +84,7 @@ for (let i = 0; i < 6; i++) {
   const wallClone = wall.clone(); // Position each wall clone slightly below the previous one
   wallClone.receiveShadow = true; // Enable shadow receiving
   walls.push(wallClone);
-  wallClone.position.set(0, -50, -8.66); // Position each wall clone
+  wallClone.position.set(0, -48, -8.66); // Position each wall clone
   rotateAroundPoint(wallClone, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), Math.PI / 3 * i);
 
   scene.add(wallClone);
@@ -103,28 +118,29 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  maxYaw = window.innerWidth - 15; // Update maxYaw
 });
-
-while (cube.position.y < -1) {
-  cube.position.y = lerp(cube.position.y, 0, 0.1) // Smoothly move cube to Y position 0
-}
 
 // Animation loop
 function animate() {
   requestAnimationFrame(animate);
-  
-  if (platform.includes('android') || platform.includes('iphone') || platform.includes('ipad')) yaw = mapRange(yaw, 0, maxYaw, 0, Math.PI * 2); // Map yaw to a full rotation
-  // console.log(`Scroll Position: ${scrollPosition}, Yaw: ${yaw}, Width: ${window.innerWidth}`); // Log scroll position and yaw
 
-  cube.rotation.y = yaw; // Rotate cube based on yaw
+  if (cube.position.y > 1) {
+    cube.position.y = lerp(cube.position.y, 0, 0.1) // Smoothly move cube to Y position 0
 
-  // Move cube based on input and yaw
-  const constantOfMobility = 0.1; // Speed of movement
-  const cubeTargetPosition = new THREE.Vector3(0, -scrollPosition, 0).multiplyScalar(constantOfMobility);
-  cube.position.lerp(cubeTargetPosition, 0.1); // Smoothly interpolate cube position
+  }
+  else {
+    // if (!hasMouse) yaw = mapRange(yaw, 0, maxYaw, 0, Math.PI * 2);
+    console.log(`Scroll Position: ${scrollPosition}, Yaw: ${yaw}, Width: ${window.innerWidth}`); // Log scroll position and yaw
 
-  cube.position.y = Math.round(cube.position.y * 100) / 100; // Round Y position to 2 decimal places
+    cube.rotation.y = yaw; // Rotate cube based on yaw
 
+    // Move cube based on input and yaw
+    const cubeTargetPosition = new THREE.Vector3(0, -scrollPosition, 0);
+    cube.position.lerp(cubeTargetPosition, 0.1); // Smoothly interpolate cube position
+
+    cube.position.y = Math.round(cube.position.y * 100) / 100; // Round Y position to 2 decimal places
+  }
   // Smooth follow camera
   const cameraOffset = new THREE.Vector3(0, 0, -4).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
   const cameraTargetPosition = cube.position.clone().add(cameraOffset);

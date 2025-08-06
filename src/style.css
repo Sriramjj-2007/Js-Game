@@ -5,12 +5,13 @@
 }
 
 body {
-  min-height: 300vh; /* Ensure body is tall enough to scroll */
+  min-height: 1000vh; /* Ensure body is tall enough to scroll */
   min-width: 200vw; /* Ensure body is wide enough to scroll */
+  scrollbar-width: 10px;
 }
 
 body::-webkit-scrollbar {
-  display: none;               /* Chrome, Safari, Edge */
+  /*display: none;               /* Chrome, Safari, Edge */
 }
 
 canvas {
