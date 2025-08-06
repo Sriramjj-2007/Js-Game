@@ -5,7 +5,8 @@
 }
 
 body {
-  min-height: 2000px;
+  min-height: 300vh; /* Ensure body is tall enough to scroll */
+  min-width: 200vw; /* Ensure body is wide enough to scroll */
 }
 
 body::-webkit-scrollbar {
