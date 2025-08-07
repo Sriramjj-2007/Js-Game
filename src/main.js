@@ -5,7 +5,7 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { log } from 'three/tsl';
 
 const text = {
-  0: ["Js-Game", "Wall 1", "Wall 1", "Wall 1", "Wall 1", "Wall 1"],
+  0: ["Bluvern Studio", "Wall 1", "Wall 1", "Wall 1", "Wall 1", "Wall 1"],
   1: ["Wall 2", "Wall 2", "Wall 2", "Wall 2", "Wall 2", "Wall 2"],
   2: ["Wall 3"],
   3: ["Wall 4"],
@@ -16,6 +16,11 @@ const text = {
 const NoOfWalls = 6; // Number of walls in the scene
 const InteriorAngle = (2 * Math.PI) / NoOfWalls; // Interior angle between walls
 
+// Texture URLs
+const backgroundTextureUrl = 'https://static.vecteezy.com/system/resources/previews/007/384/234/non_2x/blue-sky-background-and-white-clouds-vector.jpg';
+const cubeTextureUrl = 'https://threejs.org/examples/textures/crate.gif';
+const wallTextureUrl = 'https://thumbs.dreamstime.com/b/futuristic-metallic-brick-texture-glowing-blue-purple-neon-lines-cyberpunk-sci-fi-aesthetic-sleek-modern-seamless-hd-pattern-362054057.jpg';
+const textTextureUrl = 'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json';
 
 const hasMouse = window.matchMedia("(pointer: fine)").matches;
 let isPointerLocked = false;
@@ -29,14 +34,28 @@ let touchStartY = 0;
 let touchPositionY = mousePositionY;
 
 const initialCubePositionY = 100;
-
 const pivot = new THREE.Vector3(0, 0, 0);
+
 const canvas = document.getElementById('canvas');
+
 // Scene, Camera, Renderer
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x202020);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const textureLoader = new THREE.TextureLoader();
+scene.background = new THREE.Color(0x000000); // Set a default background color
+
+// textureLoader.load(
+//   backgroundTextureUrl,
+//   function (texture) {
+//     scene.background = texture;
+//   },
+//   undefined,
+//   function (err) {
+//     console.error('An error occurred loading the background texture.', err);
+//   }
+// );
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, initialCubePositionY, -5); // Set initial camera position
 
 const renderer = new THREE.WebGLRenderer({ canvas });
@@ -78,8 +97,8 @@ canvas.addEventListener('touchmove', (e) => {
     const touchY = e.touches[0].clientY;
     const deltaX = touchX - touchStartX;
     const deltaY = touchY - touchStartY;
-    mousePositionX = touchPositionX - deltaX * 0.05; // Adjust sensitivity here
-    mousePositionY = touchPositionY - deltaY * 0.1; // Adjust sensitivity here
+    mousePositionX = touchPositionX - deltaX * 0.1; // Adjust sensitivity here
+    mousePositionY = touchPositionY - deltaY * 0.08; // Adjust sensitivity here
   }
 });
 
@@ -95,14 +114,13 @@ scene.add(cube);
 const textMeshs = [];
 
 // Wall Texture
-const textureLoader = new THREE.TextureLoader();
-const wallTexture = textureLoader.load('https://thumbs.dreamstime.com/b/futuristic-metallic-brick-texture-glowing-blue-purple-neon-lines-cyberpunk-sci-fi-aesthetic-sleek-modern-seamless-hd-pattern-362054057.jpg');
+const wallTexture = textureLoader.load(wallTextureUrl);
 wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-wallTexture.repeat.set(1, 25 / 2); // Repeat texture across large plane
+wallTexture.repeat.set(1, 25); // Repeat texture across large plane
 
 // Wall Plane
 const walls = [];
-const wallGeometry = new THREE.PlaneGeometry(10, 100);
+const wallGeometry = new THREE.PlaneGeometry(10, 200);
 const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture });
 const wall = new THREE.Mesh(wallGeometry, wallMaterial);
 
@@ -111,7 +129,7 @@ for (let i = 0; i < NoOfWalls; i++) {
   const wallClone = wall.clone(); // Position each wall clone slightly below the previous one
   wallClone.receiveShadow = true; // Enable shadow receiving
   walls.push(wallClone);
-  wallClone.position.set(0, -48, 8.66); // Position each wall clone
+  wallClone.position.set(0, -50, 8.66); // Position each wall clone
   wallClone.rotation.y = Math.PI;
   rotateAroundPoint(wallClone, InteriorAngle * i);
 
@@ -143,7 +161,7 @@ scene.add(directionalLight);
 
 // Add a helper to visualize the shadow camera
 const helper = new THREE.CameraHelper(directionalLight.shadow.camera);
-scene.add(helper);
+// scene.add(helper);
 
 // Resize handling
 window.addEventListener('resize', () => {
@@ -200,7 +218,7 @@ function mapRange(value, oldMin, oldMax, newMin, newMax) {
 // Add text to the scene
 function addText(text = "Text", obj, onReady) {
   const loader = new FontLoader();
-  loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+  loader.load(textTextureUrl, function (font) {
     const textGeometry = new TextGeometry(text, {
       font: font,
       size: 1,
@@ -256,9 +274,7 @@ function PlaceText(wallNumber, textArray) {
     addText(text, null, (textMesh) => {
       textMesh.position.y = -4 * i // Set position for the text mesh
       if (wallNumber === 0) return;
-      rotateAroundPoint(textMesh, -InteriorAngle * (wallNumber)); // Rotate text mesh around the wall);
-      console.log(`Adding text: ${text} to wall ${wallNumber}`);
-
+      rotateAroundPoint(textMesh, -InteriorAngle * (wallNumber)); // Rotate text mesh around the wall
     });
   }
 }

@@ -10,7 +10,7 @@ html, body {
   overflow: hidden; /* Disable scrollbars */
 }
 
-/* canvas {
+canvas {
   position: fixed;
   top: 0;
   left: 0;
@@ -18,4 +18,4 @@ html, body {
   height: 100vh;
   display: block;
   z-index: 10;
-} */
+}
