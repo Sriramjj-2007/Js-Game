@@ -77,7 +77,7 @@ document.addEventListener('pointerlockchange', () => {
 
 document.addEventListener('mousemove', (event) => {
   if (!isPointerLocked) return;
-  mousePositionX -= event.movementX * 0.002;
+  mousePositionX -= event.movementX * 0.001;
   mousePositionY -= event.movementY * 0.01; // Add mouse Y movement
   mousePositionY = Math.min(0, mousePositionY); // Ensure mouse Y position doesn't go above 0
 });
