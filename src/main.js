@@ -3,11 +3,13 @@ import { inverseLerp, lerp } from 'three/src/math/MathUtils.js';
 const hasMouse = window.matchMedia("(pointer: fine)").matches;
 let isPointerLocked = false;
 
-let maxYaw = window.innerWidth - 15; // Maximum yaw based on window width
-let yaw = 0;
-let scrollPosition = 0;
+let maxMousePositionX = window.innerWidth - 15; // Maximum mouse X position based on window width
+let mousePositionX = 0;
+let mousePositionY = 0;
 let touchStartX = 0;
-let touchYaw = yaw;
+let touchPositionX = mousePositionX;
+let touchStartY = 0;
+let touchPositionY = mousePositionY;
 
 const initialCubePositionY = 100;
 
@@ -38,25 +40,28 @@ document.addEventListener('pointerlockchange', () => {
 
 document.addEventListener('mousemove', (event) => {
   if (!isPointerLocked) return;
-  yaw -= event.movementX * 0.002;
-});
-
-window.addEventListener('scroll', (event) => {
-  scrollPosition = window.scrollY * 0.01; // Store scroll position
+  mousePositionX -= event.movementX * 0.002;
+  mousePositionY -= event.movementY * 0.01; // Add mouse Y movement
+  mousePositionY = Math.min(0, mousePositionY); // Ensure mouse Y position doesn't go above 0
 });
 
 canvas.addEventListener('touchstart', (e) => {
   if (e.touches.length === 1) {
     touchStartX = e.touches[0].clientX;
-    touchYaw = yaw;
+    touchStartY = e.touches[0].clientY;
+    touchPositionX = mousePositionX;
+    touchPositionY = mousePositionY;
   }
 });
 
 canvas.addEventListener('touchmove', (e) => {
   if (e.touches.length === 1) {
     const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
     const deltaX = touchX - touchStartX;
-    yaw = touchYaw - deltaX * 0.005; // Adjust sensitivity here
+    const deltaY = touchY - touchStartY;
+    mousePositionX = touchPositionX - deltaX * 0.005; // Adjust sensitivity here
+    mousePositionY = touchPositionY - deltaY * 0.01; // Adjust sensitivity here
   }
 });
 
@@ -72,7 +77,7 @@ scene.add(cube);
 const textureLoader = new THREE.TextureLoader();
 const wallTexture = textureLoader.load('https://thumbs.dreamstime.com/b/futuristic-metallic-brick-texture-glowing-blue-purple-neon-lines-cyberpunk-sci-fi-aesthetic-sleek-modern-seamless-hd-pattern-362054057.jpg');
 wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-wallTexture.repeat.set(1, 25/2); // Repeat texture across large plane
+wallTexture.repeat.set(1, 25 / 2); // Repeat texture across large plane
 
 // Wall Plane
 const walls = [];
@@ -118,7 +123,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  maxYaw = window.innerWidth - 15; // Update maxYaw
+  maxmousePositionX = window.innerWidth - 15; // Update maxmousePositionX
 });
 
 // Animation loop
@@ -130,19 +135,19 @@ function animate() {
 
   }
   else {
-    // if (!hasMouse) yaw = mapRange(yaw, 0, maxYaw, 0, Math.PI * 2);
-    console.log(`Scroll Position: ${scrollPosition}, Yaw: ${yaw}, Width: ${window.innerWidth}`); // Log scroll position and yaw
+    // if (!hasMouse) mousePositionX = mapRange(mousePositionX, 0, maxmousePositionX, 0, Math.PI * 2);
+    console.log(`Mouse Y Position: ${mousePositionY}, mousePositionX: ${mousePositionX}, Width: ${window.innerWidth}`); // Log mouse Y position and mouse X position
 
-    cube.rotation.y = yaw; // Rotate cube based on yaw
+    cube.rotation.y = mousePositionX; // Rotate cube based on mousePositionX
 
-    // Move cube based on input and yaw
-    const cubeTargetPosition = new THREE.Vector3(0, -scrollPosition, 0);
+    // Move cube based on mouse Y movement and mousePositionX
+    const cubeTargetPosition = new THREE.Vector3(0, mousePositionY, 0);
     cube.position.lerp(cubeTargetPosition, 0.1); // Smoothly interpolate cube position
 
     cube.position.y = Math.round(cube.position.y * 100) / 100; // Round Y position to 2 decimal places
   }
   // Smooth follow camera
-  const cameraOffset = new THREE.Vector3(0, 0, -4).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+  const cameraOffset = new THREE.Vector3(0, 0, -4).applyAxisAngle(new THREE.Vector3(0, 1, 0), mousePositionX);
   const cameraTargetPosition = cube.position.clone().add(cameraOffset);
   camera.position.lerp(cameraTargetPosition, 0.25); // Smoothly interpolate camera position
   camera.lookAt(cube.position);

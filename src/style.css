@@ -4,14 +4,10 @@
   padding: 0;
 }
 
-body {
-  min-height: 1000vh; /* Ensure body is tall enough to scroll */
-  min-width: 200vw; /* Ensure body is wide enough to scroll */
-  scrollbar-width: 10px;
-}
-
-body::-webkit-scrollbar {
-  /*display: none;               /* Chrome, Safari, Edge */
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden; /* Disable scrollbars */
 }
 
 canvas {
