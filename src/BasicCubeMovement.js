@@ -80,7 +80,7 @@ scene.add(directionalLight);
 
 // Add a helper to visualize the shadow camera
 const helper = new THREE.CameraHelper(directionalLight.shadow.camera);
-scene.add(helper);
+// scene.add(helper);
 
 // Resize handling
 window.addEventListener('resize', () => {
@@ -106,11 +106,11 @@ var MoveInput = new THREE.Vector2(0, 0);
 // Update MoveInput based on key presses
 function InputUpdate() {
   MoveInput.set(0, 0); // Reset MoveInput each frame
-  if (keysPressed['w']) MoveInput.y = 1;
-  if (keysPressed['s']) MoveInput.y = -1;
+  if (keysPressed['w'] || keysPressed['arrowup']) MoveInput.y = 1;
+  if (keysPressed['s'] || keysPressed['arrowdown']) MoveInput.y = -1;
 
-  if (keysPressed['a']) MoveInput.x = 1;
-  if (keysPressed['d']) MoveInput.x = -1;
+  if (keysPressed['a'] || keysPressed['arrowleft']) MoveInput.x = 1;
+  if (keysPressed['d'] || keysPressed['arrowright']) MoveInput.x = -1;
 
   MoveInput.normalize(); // Normalize to ensure consistent speed
   console.log(MoveInput);
